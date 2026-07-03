@@ -49,14 +49,29 @@
   async function myId() { const s = await session(); return s ? s.user.id : null; }
   async function requireAuth() { const id = await myId(); if (!id) throw fail(401, 'You must be logged in to do that.'); return id; }
 
-  async function profileUsername(id) {
-    const { data } = await sb.from('profiles').select('username').eq('id', id).maybeSingle();
-    return data ? data.username : null;
+  async function profileInfo(id) {
+    const { data } = await sb.from('profiles').select('username, phone_verified').eq('id', id).maybeSingle();
+    return data || { username: null, phone_verified: false };
   }
   async function publicUserFromSession(s) {
     if (!s) return null;
-    const username = await profileUsername(s.user.id);
-    return { id: s.user.id, email: s.user.email, username, created_at: toMs(s.user.created_at) };
+    const p = await profileInfo(s.user.id);
+    return { id: s.user.id, email: s.user.email, username: p.username,
+      phone_verified: !!p.phone_verified, created_at: toMs(s.user.created_at) };
+  }
+
+  // Call the phone-verify edge function with the current user's JWT.
+  async function callPhoneFn(payload) {
+    const s = await session();
+    if (!s) throw fail(401, 'You must be logged in.');
+    const r = await fetch(`${window.SUPABASE_URL}/functions/v1/phone-verify`, {
+      method: 'POST',
+      headers: { apikey: window.SUPABASE_KEY, Authorization: `Bearer ${s.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    let d = {}; try { d = await r.json(); } catch (_) {}
+    if (!r.ok) throw fail(r.status, d.error || 'Phone verification failed.');
+    return d;
   }
 
   async function myFavSet() {
@@ -131,8 +146,9 @@
         throw sbErr(error, 'Could not create account.');
       }
       _session = data.session;
-      const uname = (await profileUsername(data.user.id)) || username;
-      return { user: { id: data.user.id, email: data.user.email, username: uname, created_at: toMs(data.user.created_at) } };
+      const info = await profileInfo(data.user.id);
+      return { user: { id: data.user.id, email: data.user.email, username: info.username || username,
+        phone_verified: !!info.phone_verified, created_at: toMs(data.user.created_at) } };
     }
     if (pathname === '/api/auth/login' && method === 'POST') {
       const ident = String(body.identifier || body.email || '').trim();
@@ -300,6 +316,16 @@
           return { message: { id: data.id, body: data.body, created_at: toMs(data.created_at), mine: true } };
         }
       }
+    }
+
+    // ---- phone verification (edge function: Twilio Lookup + Verify) ----
+    if (pathname === '/api/phone/start' && method === 'POST') {
+      await requireAuth();
+      return callPhoneFn({ action: 'start', phone: body.phone });
+    }
+    if (pathname === '/api/phone/check' && method === 'POST') {
+      await requireAuth();
+      return callPhoneFn({ action: 'check', phone: body.phone, code: body.code });
     }
 
     throw fail(404, 'Not found.');

@@ -382,6 +382,17 @@
   // ---------------------------------------------------------------------------
   async function viewPostForm(editId) {
     if (!requireLogin(editId ? `#/edit/${editId}` : '#/post')) return;
+    // Optional gate: require a verified (non-VoIP) phone before posting.
+    if (window.REQUIRE_PHONE_VERIFICATION && window.SUPABASE_URL && state.user && !state.user.phone_verified) {
+      app.innerHTML = '';
+      app.appendChild(h('div', { class: 'panel panel--narrow' },
+        h('div', { class: 'empty__emoji', style: 'text-align:center' }, '📱'),
+        h('h1', { class: 'form-title', style: 'text-align:center', text: 'Verify your phone to post' }),
+        h('p', { class: 'form-sub', style: 'text-align:center', text: 'To keep the community safe, you need a verified mobile number (no VoIP) before posting or replying.' }),
+        h('div', { style: 'text-align:center' },
+          h('a', { href: '#/account', class: 'btn btn--primary btn--lg', 'data-link': '' }, 'Verify my phone'))));
+      return;
+    }
     let post = null;
     if (editId) { post = (await api('/api/posts/' + editId)).post; if (!post.is_owner) { toast('You can only edit your own posts.', 'error'); navigate('#/'); return; } }
 
@@ -657,6 +668,54 @@
   // ---------------------------------------------------------------------------
   // View: Account
   // ---------------------------------------------------------------------------
+  // Phone verification widget (Supabase mode only).
+  function phoneSection() {
+    if (!window.SUPABASE_URL) return null;
+    const u = state.user;
+    const wrap = h('div', { class: 'field', style: 'border-top:1px solid var(--border);padding-top:16px;margin-top:4px' });
+    wrap.appendChild(h('label', { text: 'Phone verification' }));
+    if (u && u.phone_verified) {
+      wrap.appendChild(h('div', { class: 'status-pill status-active', style: 'display:inline-block' }, '✓ Phone verified'));
+      wrap.appendChild(h('div', { class: 'hint', text: 'Thanks — verifying helps keep the community real and safe.' }));
+      return wrap;
+    }
+    const phone = h('input', { type: 'tel', placeholder: 'e.g. +1 555 123 4567', autocomplete: 'tel' });
+    const sendBtn = h('button', { class: 'btn btn--primary btn--sm', onclick: send }, 'Send code');
+    const code = h('input', { type: 'text', inputmode: 'numeric', placeholder: '6-digit code', maxlength: 8, style: 'max-width:150px' });
+    const verifyBtn = h('button', { class: 'btn btn--primary btn--sm', onclick: check }, 'Verify');
+    const codeRow = h('div', { class: 'hidden', style: 'display:flex;gap:8px;align-items:center;margin-top:10px' }, code, verifyBtn);
+    const msg = h('div', { class: 'hint' });
+    let currentPhone = '';
+    wrap.appendChild(h('div', { class: 'hint', text: 'Verify a real mobile number to earn a trust badge. VoIP / internet numbers are not accepted.' }));
+    wrap.appendChild(h('div', { style: 'display:flex;gap:8px;align-items:center' }, phone, sendBtn));
+    wrap.appendChild(codeRow);
+    wrap.appendChild(msg);
+    async function send() {
+      const v = phone.value.trim();
+      if (!v) { toast('Enter your phone number.', 'error'); return; }
+      sendBtn.disabled = true; msg.textContent = 'Sending…';
+      try {
+        const r = await api('/api/phone/start', { method: 'POST', body: { phone: v } });
+        currentPhone = r.phone || v;
+        codeRow.classList.remove('hidden');
+        msg.textContent = 'We texted a code to ' + currentPhone + '.';
+        toast('Code sent!', 'success');
+      } catch (e) { msg.textContent = ''; toast(e.message, 'error'); }
+      finally { sendBtn.disabled = false; }
+    }
+    async function check() {
+      const c = code.value.trim();
+      if (!c) { toast('Enter the code.', 'error'); return; }
+      verifyBtn.disabled = true;
+      try {
+        await api('/api/phone/check', { method: 'POST', body: { phone: currentPhone || phone.value.trim(), code: c } });
+        toast('Phone verified! 🎉', 'success');
+        await loadUser(); updateNav(); router();
+      } catch (e) { toast(e.message, 'error'); verifyBtn.disabled = false; }
+    }
+    return wrap;
+  }
+
   async function viewAccount() {
     if (!requireLogin('#/account')) return;
     app.innerHTML = '';
@@ -666,7 +725,8 @@
       h('div', { class: 'field' }, h('label', { text: 'Username' }), h('input', { value: u.username, disabled: true })),
       h('div', { class: 'field' }, h('label', { text: 'Email' }), h('input', { value: u.email, disabled: true })),
       h('div', { class: 'field' }, h('label', { text: 'Member since' }), h('input', { value: new Date(u.created_at).toLocaleDateString(), disabled: true })),
-      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:8px' },
+      phoneSection(),
+      h('div', { style: 'display:flex;gap:8px;flex-wrap:wrap;margin-top:16px' },
         h('a', { href: '#/mine', class: 'btn btn--ghost', 'data-link': '' }, 'My posts'),
         h('a', { href: '#/favorites', class: 'btn btn--ghost', 'data-link': '' }, 'Favorites'),
         h('button', { class: 'btn btn--danger', onclick: logout }, 'Log out'))));

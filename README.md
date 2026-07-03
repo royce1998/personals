@@ -112,6 +112,7 @@ Env vars: `PORT`, `SESSION_SECRET`, `DATA_DIR`, `DB_PATH`, `UPLOAD_DIR`, `NODE_E
 - Favorites (save/unsave)
 - Manage your posts: edit, delete (removes images from disk), repost/renew
 - Report/flag posts with auto-hide past a threshold
+- Phone verification that rejects VoIP numbers (Twilio Lookup + Verify via a Supabase Edge Function)
 - 30-day auto-expiry
 - 18+ age gate
 
