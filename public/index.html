@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A community personals board — connect with people near you." />
+  <title>Personals</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💜</text></svg>" />
+</head>
+<body>
+  <!-- 18+ age gate -->
+  <div id="age-gate" class="age-gate hidden" aria-hidden="true">
+    <div class="age-gate__card">
+      <div class="age-gate__emoji">🔞</div>
+      <h1>Adults only</h1>
+      <p>This site contains personal ads intended for adults. You must be at least
+        <strong>18 years old</strong> to enter. By continuing you confirm you are of legal age
+        and agree to our community guidelines.</p>
+      <div class="age-gate__actions">
+        <button id="age-yes" class="btn btn--primary btn--lg">I am 18 or older — Enter</button>
+        <a href="https://www.google.com" class="btn btn--ghost btn--lg">Leave</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container site-header__inner">
+      <a href="#/" class="brand" data-link>
+        <span class="brand__mark">💜</span>
+        <span class="brand__name">personals</span>
+      </a>
+
+      <form id="search-form" class="searchbar" role="search">
+        <select id="city-select" class="searchbar__city" aria-label="City"></select>
+        <input id="search-input" class="searchbar__input" type="search"
+               placeholder="Search personals…" autocomplete="off" />
+        <button class="searchbar__btn" type="submit" aria-label="Search">Search</button>
+      </form>
+
+      <nav class="site-nav" id="site-nav">
+        <a href="#/post" class="btn btn--primary" data-link>+ Post</a>
+        <a href="#/inbox" class="nav-link nav-link--inbox" data-link data-auth>
+          Inbox <span id="inbox-badge" class="badge hidden">0</span>
+        </a>
+        <a href="#/favorites" class="nav-link" data-link data-auth>Favorites</a>
+        <a href="#/mine" class="nav-link" data-link data-auth>My posts</a>
+        <a href="#/account" class="nav-link" data-link data-auth id="account-link">Account</a>
+        <a href="#/login" class="nav-link" data-link data-guest>Log in</a>
+      </nav>
+      <button id="nav-toggle" class="nav-toggle" aria-label="Menu">☰</button>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main id="app" class="container app"></main>
+
+  <!-- Toasts -->
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Personals — a self-hosted community board. Be kind. Be safe. 18+ only.</p>
+      <p class="site-footer__meta">Meet in public places · Never send money · Trust your instincts</p>
+    </div>
+  </footer>
+
+  <template id="tpl-post-card">
+    <a class="post-card" data-link>
+      <div class="post-card__thumb"></div>
+      <div class="post-card__body">
+        <div class="post-card__title"></div>
+        <div class="post-card__meta"></div>
+        <div class="post-card__excerpt"></div>
+      </div>
+    </a>
+  </template>
+
+  <script src="/js/app.js" defer></script>
+</body>
+</html>

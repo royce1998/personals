@@ -19,11 +19,29 @@ A self-hosted, open-source replacement for the (deprecated) **Craigslist Persona
 
 ## Stack
 
-- Node.js + Express
-- SQLite (`better-sqlite3`)
+- **Node.js + Express**
+- **SQLite** via Node's built-in `node:sqlite` module — no native build tools required (needs Node **>= 22.5**)
 - Session auth (`express-session`, `bcryptjs`)
 - Image uploads (`multer`)
-- Vanilla JS single-page frontend
+- Vanilla-JS single-page frontend (no build step)
+
+## Project layout
+
+```
+src/
+  server.js        Express app, sessions, static + SPA fallback, error handling
+  db.js            SQLite schema (users, posts, images, conversations, messages, favorites, flags)
+  constants.js     Categories, cities, limits/config
+  util.js          Validation + helpers
+  routes/
+    auth.js        register / login / logout / me
+    posts.js       browse/search, CRUD, image upload, repost, favorite, flag
+    messages.js    anonymous replies + inbox threads
+public/
+  index.html       App shell + 18+ age gate
+  css/style.css    Styles
+  js/app.js        SPA (hash router + all views)
+```
 
 ## Getting started
 
@@ -35,7 +53,18 @@ npm run dev      # start with auto-reload
 
 ## Status
 
-🚧 Work in progress — scaffolding and core server being built.
+✅ **Functional.** Implemented and tested end-to-end:
+
+- Accounts (register/login/logout, bcrypt-hashed, session cookies)
+- Post an ad with category, city, age, gender/seeking, and up to 6 image uploads
+- Browse/search with category + city filters, age range, has-photos, sort, pagination
+- Post detail with image gallery + lightbox
+- Anonymous private reply messaging with an inbox (threads, unread badges)
+- Favorites (save/unsave)
+- Manage your posts: edit, delete (removes images from disk), repost/renew
+- Report/flag posts with auto-hide past a threshold
+- 30-day auto-expiry
+- 18+ age gate
 
 ## License
 

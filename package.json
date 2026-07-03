@@ -4,8 +4,11 @@
   "description": "A self-hosted replacement for Craigslist Personals — categories, city filtering, posting with image uploads, anonymous reply messaging, favorites, and moderation.",
   "main": "src/server.js",
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "node --watch src/server.js"
+    "start": "node --no-warnings src/server.js",
+    "dev": "node --no-warnings --watch src/server.js"
+  },
+  "engines": {
+    "node": ">=22.5.0"
   },
   "keywords": [
     "personals",
@@ -18,9 +21,8 @@
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "better-sqlite3": "^11.3.0",
     "express": "^4.19.2",
     "express-session": "^1.18.0",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^2.2.0"
   }
 }
