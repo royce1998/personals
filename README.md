@@ -2,7 +2,14 @@
 
 A self-hosted, open-source replacement for the (deprecated) **Craigslist Personals** section.
 
+### 🌐 Live demo: **https://royce1998.github.io/personals/**
+
 > ⚠️ Adults only (18+). This project is intended for legal, consensual personal ads between adults.
+>
+> ℹ️ The live demo runs on **GitHub Pages** (static hosting), so the entire backend
+> runs **in your browser** via IndexedDB. Every feature works, but data is stored
+> per-browser and is **not shared between visitors**. For a real, shared,
+> multi-user deployment, run the Node server (see below).
 
 ## Planned features
 
@@ -43,13 +50,38 @@ public/
   js/app.js        SPA (hash router + all views)
 ```
 
-## Getting started
+## Two ways to run
+
+**1. Static (GitHub Pages / any static host) — zero backend**
+The SPA auto-detects static hosting (`*.github.io` or opened as a file) and routes
+all API calls to an in-browser backend (`public/js/local-backend.js`) that mirrors
+the real API 1:1, persisting to IndexedDB. Just publish the `public/` folder.
+This repo auto-deploys `public/` to GitHub Pages via `.github/workflows/pages.yml`.
+
+**2. Node server — real, shared, multi-user**
 
 ```bash
 npm install
-npm start        # starts the server (default http://localhost:3000)
-npm run dev      # start with auto-reload
+npm start        # http://localhost:3000
+npm run dev      # auto-reload
 ```
+
+Data is stored in SQLite (`data/personals.db`) and uploads on disk (`uploads/`).
+On `localhost` / a real server the SPA talks to the live API automatically.
+
+### Deploying the Node server
+
+A `Dockerfile` and `fly.toml` are included for **Fly.io** (persistent volume for the
+SQLite DB + uploads, plus a SQLite-backed session store so logins survive restarts):
+
+```bash
+fly apps create <your-app>
+fly volumes create personals_data --region <region> --size 1 -a <your-app>
+fly secrets set SESSION_SECRET=$(openssl rand -hex 32) -a <your-app>
+fly deploy --remote-only
+```
+
+Env vars: `PORT`, `SESSION_SECRET`, `DATA_DIR`, `DB_PATH`, `UPLOAD_DIR`, `NODE_ENV`.
 
 ## Status
 
