@@ -50,13 +50,17 @@
   // ---------------------------------------------------------------------------
   // API layer
   // ---------------------------------------------------------------------------
-  // Static mode (e.g. GitHub Pages / opened as a file): no Node server, so route
-  // requests to the in-browser backend. Otherwise talk to the real API.
+  // Backend selection: Supabase (shared, real) if configured; otherwise the
+  // in-browser IndexedDB backend on static hosting; otherwise the Node API.
+  const USE_SUPABASE = !!(window.SUPABASE_URL && window.SupabaseBackend);
   const STATIC_MODE = location.hostname.endsWith('github.io')
     || location.protocol === 'file:'
     || !!window.PERSONALS_STATIC;
 
   async function api(path, { method = 'GET', body, form } = {}) {
+    if (USE_SUPABASE) {
+      return window.SupabaseBackend.handle(path, { method, body, form });
+    }
     if (STATIC_MODE && window.LocalBackend) {
       return window.LocalBackend.handle(path, { method, body, form });
     }
@@ -613,15 +617,16 @@
     const err = h('div', { class: 'form-error hidden' });
     const next = query.next || '#/';
 
+    const loginByEmail = !!window.SUPABASE_URL;
     const email = h('input', { type: 'email', required: true, placeholder: 'you@example.com', autocomplete: 'email' });
     const username = h('input', { required: true, placeholder: 'yourname', autocomplete: 'username' });
-    const identifier = h('input', { required: true, placeholder: 'Email or username', autocomplete: 'username' });
+    const identifier = h('input', { type: loginByEmail ? 'email' : 'text', required: true, placeholder: loginByEmail ? 'you@example.com' : 'Email or username', autocomplete: loginByEmail ? 'email' : 'username' });
     const pw = h('input', { type: 'password', required: true, placeholder: '••••••••', autocomplete: isLogin ? 'current-password' : 'new-password' });
     const btn = h('button', { type: 'submit', class: 'btn btn--primary btn--block btn--lg' }, isLogin ? 'Log in' : 'Create account');
 
     const form = h('form', { onsubmit: submit }, err,
       isLogin
-        ? h('div', { class: 'field' }, h('label', { text: 'Email or username' }), identifier)
+        ? h('div', { class: 'field' }, h('label', { text: loginByEmail ? 'Email' : 'Email or username' }), identifier)
         : [h('div', { class: 'field' }, h('label', { text: 'Email' }), email),
            h('div', { class: 'field' }, h('label', { text: 'Username' }), username)],
       h('div', { class: 'field' }, h('label', { text: 'Password' }), pw,
