@@ -50,7 +50,16 @@
   // ---------------------------------------------------------------------------
   // API layer
   // ---------------------------------------------------------------------------
+  // Static mode (e.g. GitHub Pages / opened as a file): no Node server, so route
+  // requests to the in-browser backend. Otherwise talk to the real API.
+  const STATIC_MODE = location.hostname.endsWith('github.io')
+    || location.protocol === 'file:'
+    || !!window.PERSONALS_STATIC;
+
   async function api(path, { method = 'GET', body, form } = {}) {
+    if (STATIC_MODE && window.LocalBackend) {
+      return window.LocalBackend.handle(path, { method, body, form });
+    }
     const opts = { method, headers: {}, credentials: 'same-origin' };
     if (form) opts.body = form;
     else if (body !== undefined) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }

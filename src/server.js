@@ -6,6 +6,8 @@ const session = require('express-session');
 const multer = require('multer');
 
 const { CATEGORIES, CITIES, CONFIG } = require('./constants');
+const { UPLOAD_DIR } = require('./paths');
+const SqliteStore = require('./session-store');
 const authRoutes = require('./routes/auth');
 const postRoutes = require('./routes/posts');
 const messageRoutes = require('./routes/messages');
@@ -14,6 +16,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+  console.warn('[warn] SESSION_SECRET is not set — using an insecure default.');
+}
+
 app.set('trust proxy', 1);
 
 // Body parsers (multipart handled per-route by multer)
@@ -21,6 +27,7 @@ app.use(express.urlencoded({ extended: false }));
 
 app.use(session({
   name: 'connect.sid',
+  store: new SqliteStore(),
   secret: process.env.SESSION_SECRET || 'dev-only-change-me-in-production',
   resave: false,
   saveUninitialized: false,
@@ -34,7 +41,7 @@ app.use(session({
 }));
 
 // Static assets
-app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads'), {
+app.use('/uploads', express.static(UPLOAD_DIR, {
   maxAge: '7d',
   index: false,
 }));
@@ -89,7 +96,7 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong on our end.' });
 });
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`Personals running at http://localhost:${PORT}`);
 });
 

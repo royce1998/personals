@@ -6,14 +6,13 @@ const fs = require('fs');
 const crypto = require('crypto');
 const multer = require('multer');
 const { db } = require('../db');
+const { UPLOAD_DIR } = require('../paths');
 const { CATEGORY_SLUGS, CONFIG } = require('../constants');
 const {
   now, cleanText, asyncHandler, fail, requireAuth,
 } = require('../util');
 
 const router = express.Router();
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const ALLOWED_MIME = new Set(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 const EXT_BY_MIME = {
