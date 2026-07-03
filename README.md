@@ -2,14 +2,13 @@
 
 A self-hosted, open-source replacement for the (deprecated) **Craigslist Personals** section.
 
-### 🌐 Live demo: **https://royce1998.github.io/personals/**
+### 🌐 Live: **https://royce1998.github.io/personals/**
 
-> ⚠️ Adults only (18+). This project is intended for legal, consensual personal ads between adults.
+> ⚠️ Adults only (18+). For legal, consensual personal ads between adults.
 >
-> ℹ️ The live demo runs on **GitHub Pages** (static hosting), so the entire backend
-> runs **in your browser** via IndexedDB. Every feature works, but data is stored
-> per-browser and is **not shared between visitors**. For a real, shared,
-> multi-user deployment, run the Node server (see below).
+> ✅ The live site is a **real, shared, multi-user app**: static frontend on
+> **GitHub Pages** + backend on **Supabase** (Auth + Postgres with row-level
+> security + Storage for images). Everyone sees each other's posts and can message.
 
 ## Planned features
 
@@ -50,13 +49,31 @@ public/
   js/app.js        SPA (hash router + all views)
 ```
 
-## Two ways to run
+## Architecture
 
-**1. Static (GitHub Pages / any static host) — zero backend**
-The SPA auto-detects static hosting (`*.github.io` or opened as a file) and routes
-all API calls to an in-browser backend (`public/js/local-backend.js`) that mirrors
-the real API 1:1, persisting to IndexedDB. Just publish the `public/` folder.
-This repo auto-deploys `public/` to GitHub Pages via `.github/workflows/pages.yml`.
+The SPA (`public/`) auto-selects a backend at runtime, so the same frontend runs
+anywhere:
+
+1. **Supabase (shared, production)** — if `public/js/supabase-config.js` has a
+   project URL + publishable key, the app uses **Supabase Auth + Postgres (RLS)
+   + Storage** via `public/js/supabase-backend.js`. This powers the live site.
+2. **In-browser (offline/demo)** — on static hosting with no Supabase config, it
+   falls back to an IndexedDB backend (`public/js/local-backend.js`).
+3. **Node server (self-host)** — on `localhost`/your own server it uses the
+   Express + SQLite API in `src/`.
+
+All three implement the **same request/response API**, so features are identical.
+
+### Supabase setup
+
+`supabase/schema.sql` + `supabase/schema2.sql` define the tables, row-level
+security policies, server-side RPCs (reply/flag/favorite/repost/inbox), triggers
+(auto-create profile on signup), and the public `post-images` storage bucket.
+Apply them in the Supabase SQL editor (or via the Management API), set the
+project URL + **publishable** key in `public/js/supabase-config.js`, and deploy
+the `public/` folder.
+
+## Two ways to run
 
 **2. Node server — real, shared, multi-user**
 
