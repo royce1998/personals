@@ -1,0 +1,20 @@
+# node
+node_modules/
+npm-debug.log*
+
+# runtime data (do not commit user data / DB / uploads)
+data/*.db
+data/*.db-journal
+data/*.sqlite
+uploads/*
+!uploads/.gitkeep
+
+# env & secrets
+.env
+*.local
+
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
